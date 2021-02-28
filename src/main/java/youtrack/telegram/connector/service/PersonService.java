@@ -14,7 +14,10 @@ public class PersonService {
     PersonRepository personRepository;
 
     public Long addLinkWithTelegram(String youTrackLogin, long telegramChatId) {
-        Person person = findPerson(youTrackLogin).orElse(createPerson(youTrackLogin, telegramChatId));
+        Person person = findPersonByLogin(youTrackLogin).orElse(null);
+        if (person == null) {
+            person = findPersonByChatId(telegramChatId).orElse(createPerson(youTrackLogin, telegramChatId));
+        }
         if (person.getId() == null) {
             personRepository.addLinkWithTelegram(person);
         }
@@ -25,8 +28,12 @@ public class PersonService {
         return personRepository.unLinkFromTelegram(youTrackLogin);
     }
 
-    public Optional<Person> findPerson(String youTrackLogin) {
+    public Optional<Person> findPersonByLogin(String youTrackLogin) {
         return personRepository.findByLogin(youTrackLogin);
+    }
+
+    public Optional<Person> findPersonByChatId(long chatId) {
+        return personRepository.findByChatId(chatId);
     }
 
     private Person createPerson(String youTrackLogin, long telegramChatId) {
