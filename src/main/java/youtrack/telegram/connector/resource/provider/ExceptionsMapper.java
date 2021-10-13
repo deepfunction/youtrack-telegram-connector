@@ -14,7 +14,7 @@ import java.util.ResourceBundle;
 @Provider
 public class ExceptionsMapper implements ExceptionMapper<Exception> {
 
-    private final Logger LOG = Logger.getLogger(ExceptionsMapper.class);
+    private static final Logger LOG = Logger.getLogger(ExceptionsMapper.class);
 
     @Override
     public Response toResponse(Exception e) {
@@ -28,5 +28,4 @@ public class ExceptionsMapper implements ExceptionMapper<Exception> {
                 ));
         return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(error).build();
     }
-
 }

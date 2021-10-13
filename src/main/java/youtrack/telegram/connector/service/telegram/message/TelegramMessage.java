@@ -1,8 +1,8 @@
-package youtrack.telegram.connector.service.telegram.message.dto;
+package youtrack.telegram.connector.service.telegram.message;
 
 import org.telegram.telegrambots.meta.api.objects.Message;
 
-public class TelegramMessage  {
+public class TelegramMessage {
 
     private Message message;
 
@@ -31,5 +31,4 @@ public class TelegramMessage  {
     public void setUserId(int userId) {
         this.userId = userId;
     }
-
 }

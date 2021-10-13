@@ -17,5 +17,4 @@ public class ErrorResponse {
     public void setErrors(List<Error> errors) {
         this.errors = errors;
     }
-
 }

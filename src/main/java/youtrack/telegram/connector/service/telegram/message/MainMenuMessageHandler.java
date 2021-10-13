@@ -3,23 +3,21 @@ package youtrack.telegram.connector.service.telegram.message;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
-import youtrack.telegram.connector.service.telegram.message.dto.TelegramMessage;
-import youtrack.telegram.connector.service.telegram.message.dto.TelegramSendMessage;
 import youtrack.telegram.connector.service.telegram.state.BotState;
-import youtrack.telegram.connector.service.telegram.user.UserDataCacheService;
+import youtrack.telegram.connector.service.telegram.user.UserDataCache;
 
-import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.ResourceBundle;
 
-@ApplicationScoped
+@RequestScoped
 public class MainMenuMessageHandler implements InputMessageHandler {
 
     @Inject
-    UserDataCacheService userDataCacheService;
+    UserDataCache userDataCache;
 
     @Override
     public List<TelegramSendMessage> handle(TelegramMessage telegramMessage) {
@@ -33,23 +31,27 @@ public class MainMenuMessageHandler implements InputMessageHandler {
 
     private List<TelegramSendMessage> processUsersInput(TelegramMessage telegramMessage) {
         List<TelegramSendMessage> telegramSendMessages = new ArrayList<>();
-        int userId = telegramMessage.getUserId();
-        long chatId = telegramMessage.getMessage().getChatId();
-        BotState botState = userDataCacheService.getUsersCurrentBotState(userId);
+        var userId = telegramMessage.getUserId();
+        var chatId = telegramMessage.getMessage().getChatId();
+        var botState = userDataCache.getUsersCurrentBotState(userId);
         if (botState.equals(BotState.SHOW_MAIN_MENU)) {
-            TelegramSendMessage telegramSendMessage = new TelegramSendMessage(new SendMessage(chatId, ResourceBundle.getBundle("i18n/message", Locale.getDefault()).getString("chooseAction")));
-            telegramSendMessage.getSendMessage().setReplyMarkup(createButtons());
-            telegramSendMessages.add(telegramSendMessage);
-            userDataCacheService.clearUserCache(userId);
+            telegramSendMessages.add(setMessageAndState(userId, chatId, ResourceBundle.getBundle("i18n/message", Locale.getDefault()).getString("chooseAction")));
         }
         return telegramSendMessages;
     }
 
+    private TelegramSendMessage setMessageAndState(int userId, long chatId, String message) {
+        var telegramSendMessage = new TelegramSendMessage(new SendMessage(chatId, message));
+        telegramSendMessage.getSendMessage().setReplyMarkup(createButtons());
+        userDataCache.clearUserCache(userId);
+        return telegramSendMessage;
+    }
+
     private InlineKeyboardMarkup createButtons() {
-        InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
-        InlineKeyboardButton buttonLink = new InlineKeyboardButton().setText(ResourceBundle.getBundle("i18n/message", Locale.getDefault()).getString("linkWithYoutrack"));
+        var inlineKeyboardMarkup = new InlineKeyboardMarkup();
+        var buttonLink = new InlineKeyboardButton().setText(ResourceBundle.getBundle("i18n/message", Locale.getDefault()).getString("linkWithYoutrack"));
         buttonLink.setCallbackData(ResourceBundle.getBundle("i18n/message", Locale.getDefault()).getString("buttonLink"));
-        InlineKeyboardButton buttonUnlink = new InlineKeyboardButton().setText(ResourceBundle.getBundle("i18n/message", Locale.getDefault()).getString("unlinkFromYoutrack"));
+        var buttonUnlink = new InlineKeyboardButton().setText(ResourceBundle.getBundle("i18n/message", Locale.getDefault()).getString("unlinkFromYoutrack"));
         buttonUnlink.setCallbackData(ResourceBundle.getBundle("i18n/message", Locale.getDefault()).getString("buttonUnlink"));
 
         List<InlineKeyboardButton> keyboardButtonsRow = new ArrayList<>();
@@ -62,5 +64,4 @@ public class MainMenuMessageHandler implements InputMessageHandler {
         inlineKeyboardMarkup.setKeyboard(rowList);
         return inlineKeyboardMarkup;
     }
-
 }

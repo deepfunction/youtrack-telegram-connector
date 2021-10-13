@@ -40,5 +40,4 @@ public class Error {
     public void setDescription(String description) {
         this.description = description;
     }
-
 }

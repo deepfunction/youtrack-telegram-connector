@@ -1,8 +1,8 @@
 package youtrack.telegram.connector.utils;
 
-public class CatalogueControllerAPIPaths {
+public class ApiPaths {
 
-    public static final String BASE_PATH = "/medsoft/youtrack/telegram/api/v1/";
+    public static final String BASE_PATH = "youtrack/telegram/api/v1/";
 
     public static final String YOUTRACK = "youtrack/webhook";
 
@@ -10,4 +10,6 @@ public class CatalogueControllerAPIPaths {
 
     public static final String INVALIDATE_CACHE = "cache/invalidate";
 
+    private ApiPaths() {
+    }
 }
