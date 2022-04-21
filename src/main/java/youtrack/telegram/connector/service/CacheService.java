@@ -27,5 +27,4 @@ public class CacheService {
     @CacheInvalidateAll(cacheName = "person")
     public void invalidateAllCache() {
     }
-
 }

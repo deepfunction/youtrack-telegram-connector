@@ -7,7 +7,7 @@ import java.util.Objects;
 public class Person {
 
     @Id
-    @GeneratedValue(strategy= GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     public Long id;
 
     @Column(name = "youtrack_login")
@@ -60,5 +60,4 @@ public class Person {
     public int hashCode() {
         return Objects.hash(id);
     }
-
 }

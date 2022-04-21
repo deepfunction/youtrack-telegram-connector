@@ -1,8 +1,8 @@
 package youtrack.telegram.connector.service.telegram.state;
 
 import youtrack.telegram.connector.service.telegram.message.InputMessageHandler;
-import youtrack.telegram.connector.service.telegram.message.dto.TelegramMessage;
-import youtrack.telegram.connector.service.telegram.message.dto.TelegramSendMessage;
+import youtrack.telegram.connector.service.telegram.message.TelegramMessage;
+import youtrack.telegram.connector.service.telegram.message.TelegramSendMessage;
 
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.Map;
 
 @ApplicationScoped
-public class BotStateService {
+public class BotStateContext {
 
     private final Map<BotState, InputMessageHandler> messageHandlerMap = new HashMap<>();
 
@@ -22,13 +22,11 @@ public class BotStateService {
 
     @PostConstruct
     void putMessageHandlers() {
-        messageHandlerList.forEach(handler -> {
-            this.messageHandlerMap.put(handler.getHandlerName(), handler);
-        });
+        messageHandlerList.forEach(handler -> this.messageHandlerMap.put(handler.getHandlerName(), handler));
     }
 
     public List<TelegramSendMessage> processInputMessage(BotState currentState, TelegramMessage telegramMessage) {
-        InputMessageHandler currentMessageHandler = findMessageHandler(currentState);
+        var currentMessageHandler = findMessageHandler(currentState);
         return currentMessageHandler.handle(telegramMessage);
     }
 
@@ -63,6 +61,5 @@ public class BotStateService {
                 return false;
         }
     }
-
 }
 

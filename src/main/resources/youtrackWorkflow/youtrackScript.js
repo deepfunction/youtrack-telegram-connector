@@ -36,7 +36,7 @@ function findUserInText(isNew, assigned, watcher, updater, issueText, issue, whe
         addMessage(messages, message);
     }
     // Если комментарий без упоминаний
-    if (!isNew && loginFromText === undefined) {
+    if (!isNew && loginFromText == undefined) {
         if (assigned !== undefined && assigned !== updater.login) {
             message = {
                 login: assigned,
@@ -54,12 +54,13 @@ function findUserInText(isNew, assigned, watcher, updater, issueText, issue, whe
     }
 }
 
-function formMessage(isNew, assigned, watcher, text, changedByName, issueLink, issue, summary, message, updater, messages) {
+function formMessage(isNew, assigned, watcher, text, issueLink, issue, summary, updater, created, updated, messages) {
     // Если новая задача
+    var message;
     if (isNew) {
         if (assigned !== undefined && assigned !== issue.reporter.login) {
             text = assigned + ", на тебя была назначена новая задача" + "\n" +
-                "Назначил: " + changedByName + "\n" +
+                "Назначил: " + updater.fullName + "\n" +
                 "Ссылка: " + issueLink + "\n" +
                 "Состояние: " + issue.fields.State.presentation + "\n" +
                 "Приоритет: " + issue.fields.Priority.presentation + "\n" +
@@ -71,7 +72,7 @@ function formMessage(isNew, assigned, watcher, text, changedByName, issueLink, i
             addMessage(messages, message);
         }
         var issueText = issue.description;
-        findUserInText(true, assigned, watcher, updater, issueText, issue, "описании", messages);
+        findUserInText(isNew, assigned, watcher, updater, issueText, issue, "описании", messages);
     }
     // Обновление
     if (!isNew) {
@@ -82,22 +83,22 @@ function formMessage(isNew, assigned, watcher, text, changedByName, issueLink, i
             comments.forEach(function (comment) {
                 if (comment.isNew) {
                     // Добавляем в текст сообщения текст комментария
-                    text += "\n" + comment.text;
-                    findUserInText(false, assigned, watcher, updater, text, issue, "комментарии", messages);
+                    text += comment.text;
+                    findUserInText(isNew, assigned, watcher, updater, text, issue, "комментарии", messages);
                 }
             });
         } else {
             // Если обновлена не тем на кого назначена
-            if (assigned !== undefined && updater.login !== assigned) {
-                text = assigned + ", задача " + issue.summary + " " + issueLink + " была обновлена.";
+            if (assigned !== undefined && updater.login !== assigned && created !== updated) {
+                text = assigned + ", задача " + issue.summary + " " + issueLink + " была обновлена.\nОбновил: " + updater.fullName;
                 message = {
                     login: assigned,
                     text: text
                 };
                 addMessage(messages, message);
             }
-            if (watcher !== undefined && updater.login !== watcher) {
-                text = watcher + ", задача " + issue.summary + " " + issueLink + " была обновлена.";
+            if (watcher !== undefined && updater.login !== watcher && created !== updated) {
+                text = watcher + ", задача " + issue.summary + " " + issueLink + " была обновлена.\nОбновил: " + updater.fullName;
                 message = {
                     login: watcher,
                     text: text
@@ -105,8 +106,8 @@ function formMessage(isNew, assigned, watcher, text, changedByName, issueLink, i
                 addMessage(messages, message);
             }
             // Отправляем создателю, что задача закрыта
-            if (issue.State.presentation === 'Done' && issue.reporter.login !== updater.login && issue.fields.oldValue('State') !== null && issue.fields.oldValue('State').presentation !== 'Done') {
-                text = issue.reporter.login + ", задача " + issue.summary + " " + issueLink + " закрыта.";
+            if (issue.State.presentation == 'Done' && issue.reporter.login !== updater.login && issue.fields.oldValue('State') !== null && issue.fields.oldValue('State').presentation !== 'Done') {
+                text = issue.reporter.login + ", задача " + issue.summary + " " + issueLink + " закрыта.\nЗакрыл: " + updater.fullName;
                 message = {
                     login: issue.reporter.login,
                     text: text
@@ -132,16 +133,16 @@ exports.rule = entities.Issue.onChange({
             isNew = true;
         }
         summary = issue.summary;
-        var changedByName = '';
         var assignee = ctx.issue.fields.Assignee;
         var updater;
         var assigned;
         var watcher;
-        var message;
         var text = "";
         var assignedUsers = [];
         var watchers = [];
         var messages = [];
+        var created = issue.created;
+        var updated = issue.updated;
 
         // Добавляем в отдельный лист тех на кого назначили задачу
         if (assignee !== undefined) {
@@ -153,7 +154,7 @@ exports.rule = entities.Issue.onChange({
         // Добавляем в отдельный лист подписанных (watchers)
         if (issue.tags.size > 0) {
             issue.tags.forEach(function (value) {
-                if (value.name === "Star") {
+                if (value.name == "Star") {
                     var watcher = value.owner;
                     watchers.push(watcher.login);
                 }
@@ -161,10 +162,8 @@ exports.rule = entities.Issue.onChange({
         }
 
         if (isNew) {
-            changedByName = issue.reporter.fullName;
             updater = issue.reporter;
         } else {
-            changedByName = issue.updatedBy.fullName;
             updater = issue.updatedBy;
         }
 
@@ -174,22 +173,22 @@ exports.rule = entities.Issue.onChange({
                 if (watchers.length > 0) {
                     for (var watcherUser in watchers) {
                         watcher = watchers[watcherUser];
-                        formMessage(isNew, assigned, watcher, text, changedByName, issueLink, issue, summary, message, updater, messages);
+                        formMessage(isNew, assigned, watcher, text, issueLink, issue, summary, updater, created, updated, messages);
                     }
                 }
-                formMessage(isNew, assigned, watcher, text, changedByName, issueLink, issue, summary, message, updater, messages);
+                formMessage(isNew, assigned, watcher, text, issueLink, issue, summary, updater, created, updated, messages);
             }
         } else {
             // В этом случае ищем упоминание в комментарии
-            formMessage(isNew, assigned, watcher, text, changedByName, issueLink, issue, summary, message, updater, messages);
+            formMessage(isNew, assigned, watcher, text, issueLink, issue, summary, updater, created, updated, messages);
         }
 
         if (messages.length > 0) {
-            var connection = new http.Connection('http://localhost:8099', null, 500);
+            var connection = new http.Connection('http://10.3.0.43:8099', null, 500);
             connection.addHeader('Content-Type', 'application/json');
             connection.addHeader('Accept', 'application/json');
             connection.addHeader('Accept-Charset', 'UTF-8');
-            for (message in messages) {
+            for (var message in messages) {
                 var queryParams = {
                     login: messages[message].login,
                     text: messages[message].text
